@@ -1,10 +1,10 @@
-﻿
-import random
+﻿import random
 import argparse
 import contextlib
 import torch
 import torch.optim as optim
 import numpy as np
+import os  # 新增：用于系统路径检索
 from merger.data_flower import all_h5
 #from merger.merger_net1 import Net
 from merger.merger_net2 import Net1
@@ -15,8 +15,6 @@ from merger.composed_chamfer import composed_sqrt_chamfer#calc_cd,overlap_loss_t
 arg_parser = argparse.ArgumentParser(description="Training Skeleton Merger. Valid .h5 files must contain a 'data' array of shape (N, n, 3) and a 'label' array of shape (N, 1).", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 arg_parser.add_argument('-t', '--train-data-dir', type=str, default=r'E:\Education\Research\keypoints\Keypoints\point\train\h5',
                         help='Directory that contains training .h5 files.')
-#arg_parser.add_argument('-t', '--train-data-dir', type=str, default='Keypoints/point/train/h5',
- #                       help='Directory that contains training .h5 files.')
 arg_parser.add_argument('-v', '--val-data-dir', type=str, default=r'E:\Education\Research\keypoints\Keypoints\point\train\h5',
                         help='Directory that contains validation .h5 files.')
 arg_parser.add_argument('-c', '--subclass', type=int, default=14,
@@ -72,8 +70,6 @@ def feed(net, optimizer, x_set, train, shuffle, batch, epoch):
             #running_ldiv += bldiv.item()
             running_loss += loss.item()
 
-
-
             #writer.add_scalar('loss', loss.item(), epoch)
             print('[%s%d, %4d] loss: %.4f Lrc: %.4f Ldiv: %.4f' %
                    ('VT'[train], epoch, i, running_loss / (i + 1), running_lrc / (i + 1), running_ldiv / (i + 1)))
@@ -92,10 +88,27 @@ if __name__ == '__main__':
     net = Net1(2048,10).to(ns.device)
     #net = Net(2048,32).to(ns.device)
     optimizer = optim.Adadelta(net.parameters(), eps=1e-2)
-    for epoch in range(ns.epochs):
+
+    # ==================== 新增：模型断点加载逻辑 (Resume Training) ====================
+    start_epoch = 0
+    if os.path.exists(ns.checkpoint_path):
+        print(f"正在从现有检查点加载模型参数: {ns.checkpoint_path} ...")
+        checkpoint = torch.load(ns.checkpoint_path, map_location=ns.device)
+        net.load_state_dict(checkpoint['model_state_dict'])
+        start_epoch = checkpoint['epoch'] + 1
+        print(f"加载成功。模型将从第 {start_epoch} 轮（Epoch）继续迭代。")
+    else:
+        print("未检测到预训练检查点，将从随机初始化状态开始训练。")
+    # ===============================================================================
+
+    # 修改迭代范围，确保从 start_epoch 开始
+    for epoch in range(start_epoch, ns.epochs):
         feed(net, optimizer, x, True, True, batch, epoch)
         feed(net, optimizer, x_test, False, False, batch, epoch)
+        
+        # 保存周期性检查点
         torch.save({
             'epoch': epoch,
             'model_state_dict': net.state_dict(),
         }, ns.checkpoint_path)
+        print(f"Epoch {epoch} 完成，训练状态已保存至: {ns.checkpoint_path}")
