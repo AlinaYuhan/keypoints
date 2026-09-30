@@ -8,7 +8,7 @@ SKNet couples keypoint detection with skeletal reconstruction to identify salien
 
 ![SKNet architecture: keypoint detection, topology construction, and skeletal outline generation](assets/sknet_architecture.png)
 
-*Framework overview from Figure 2 of the SKNet manuscript.*
+*SKNet architecture for joint keypoint detection and skeletal reconstruction.*
 
 - **Keypoint detection:** A DGCNN encoder extracts point features, while saliency weights determine keypoint locations. Transformer-based feature refinement provides global shape context.
 - **Topology construction:** A geometric construction strategy and a graph-based link predictor establish connections between keypoints.
@@ -18,11 +18,11 @@ SKNet couples keypoint detection with skeletal reconstruction to identify salien
 
 ![Keypoint detection comparisons across several object categories](assets/keypoint_comparison.png)
 
-*Qualitative comparison from Figure 4 of the SKNet manuscript. The bottom row shows SKNet predictions.*
+*Qualitative comparison of 3D keypoint detection across object categories. The bottom row shows SKNet predictions.*
 
-The manuscript evaluates keypoint localization on **KeypointNet**, semantic consistency on **ShapeNet**, and generalization to real-world scans on **ScanObjectNN**.
+Evaluation covers keypoint localization on **KeypointNet**, semantic consistency on **ShapeNet**, and generalization to real-world scans on **ScanObjectNN**.
 
-KeypointNet results below are reproduced from manuscript Table I, using an mIoU distance threshold of 0.1. Higher is better.
+KeypointNet mIoU scores at a distance threshold of 0.1. Higher is better.
 
 | Category | Skeleton Merger | SKNet |
 | --- | ---: | ---: |
